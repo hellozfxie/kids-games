@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>小朋友的快乐乐园 🎉</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", sans-serif; }
+  body {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 25%, #a1c4fd 50%, #c2e9fb 75%, #ffd3a5 100%);
+    background-size: 400% 400%;
+    animation: bgShift 15s ease infinite;
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: #4a3f5c;
+  }
+  @keyframes bgShift {
+    0%,100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  @keyframes pop { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  @keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+  @keyframes confetti-fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+  .app { max-width: 900px; margin: 0 auto; padding: 20px; position: relative; }
+
+  /* ============ Header ============ */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .logo {
+    font-size: 34px; font-weight: 900; color: #fff;
+    text-shadow: 2px 2px 0 #ff6b9d, 4px 4px 0 rgba(0,0,0,.15);
+    animation: float 3s ease-in-out infinite;
+  }
+  .home-btn {
+    background: #fff; border: none; border-radius: 50px;
+    padding: 10px 22px; font-size: 18px; font-weight: 700;
+    color: #ff6b9d; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    transition: transform .15s;
+  }
+  .home-btn:hover { transform: scale(1.08); }
+
+  /* ============ Lobby ============ */
+  .lobby h1 {
+    text-align: center; font-size: 42px; color: #fff;
+    text-shadow: 3px 3px 0 #ff6b9d; margin: 10px 0 8px;
+  }
+  .lobby .subtitle { text-align: center; color: #fff; font-size: 18px; margin-bottom: 30px; opacity: .9; }
+  .game-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 22px;
+  }
+  .game-card {
+    background: #fff; border-radius: 28px; padding: 28px 18px; text-align: center;
+    cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    transition: transform .2s, box-shadow .2s; border: 4px solid transparent;
+    position: relative; overflow: hidden;
+  }
+  .game-card:hover { transform: translateY(-8px) scale(1.03); box-shadow: 0 14px 30px rgba(0,0,0,.18); }
+  .game-card .emoji { font-size: 64px; display: block; margin-bottom: 12px; animation: bounce 2.5s ease-in-out infinite; }
+  .game-card .name { font-size: 22px; font-weight: 800; color: #4a3f5c; margin-bottom: 6px; }
+  .game-card .desc { font-size: 14px; color: #888; line-height: 1.4; }
+  .game-card:nth-child(1) { background: linear-gradient(135deg,#fff5f7,#ffe4ec); border-color: #ff6b9d; }
+  .game-card:nth-child(2) { background: linear-gradient(135deg,#f0f9ff,#e0f2fe); border-color: #38bdf8; }
+  .game-card:nth-child(3) { background: linear-gradient(135deg,#fef9e7,#fef3c7); border-color: #fbbf24; }
+  .game-card:nth-child(4) { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-color: #4ade80; }
+  .game-card:nth-child(5) { background: linear-gradient(135deg,#faf5ff,#f3e8ff); border-color: #a78bfa; }
+
+  /* ============ Game Screen ============ */
+  .screen { display: none; animation: pop .35s ease; }
+  .screen.active { display: block; }
+  .screen-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,.85); border-radius: 20px; padding: 14px 22px;
+    margin-bottom: 20px; box-shadow: 0 4px 14px rgba(0,0,0,.08);
+  }
+  .screen-title { font-size: 24px; font-weight: 900; color: #4a3f5c; }
+  .stat { font-size: 18px; font-weight: 700; color: #ff6b9d; }
+  .stat span { color: #4a3f5c; }
+
+  /* ===== Match-3 (消消乐) ===== */
+  .match3-board {
+    display: grid; gap: 5px; justify-content: center; position: relative;
+    grid-template-columns: repeat(6, 1fr); max-width: 460px; margin: 0 auto;
+    background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 10px; border-radius: 20px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,.1), 0 6px 20px rgba(0,0,0,.15);
+  }
+  .m3-cell {
+    aspect-ratio: 1; background: rgba(255,255,255,.85); border-radius: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 30px;
+    box-shadow: 0 3px 6px rgba(0,0,0,.12), inset 0 2px 4px rgba(255,255,255,.8);
+    transition: transform .15s, box-shadow .15s; user-select: none; position: relative;
+  }
+  .m3-cell:hover { transform: scale(1.08); z-index: 3; }
+  .m3-cell.selected {
+    box-shadow: 0 0 0 4px #ff6b9d, 0 0 16px rgba(255,107,157,.6), 0 3px 6px rgba(0,0,0,.15);
+    transform: scale(1.12); z-index: 4;
+  }
+  .m3-cell.removing { animation: m3pop .4s ease forwards; }
+  @keyframes m3pop {
+    0% { transform: scale(1) rotate(0); opacity: 1; }
+    30% { transform: scale(1.35) rotate(15deg); opacity: 1; }
+    100% { transform: scale(0) rotate(180deg); opacity: 0; }
+  }
+  .m3-cell.special {
+    background: linear-gradient(135deg, #fde047, #f59e0b);
+    box-shadow: 0 0 14px #fbbf24, 0 3px 6px rgba(0,0,0,.2);
+    animation: wiggle 1.2s ease infinite;
+  }
+  .m3-cell.sparkle::after {
+    content: '✨'; position: absolute; top: -4px; right: -4px; font-size: 16px;
+    animation: pop .4s ease;
+  }
+  .m3-popup {
+    position: absolute; font-size: 22px; font-weight: 900; color: #ff6b9d;
+    pointer-events: none; z-index: 10; text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff;
+    animation: floatUp 1s ease forwards;
+  }
+  .m3-popup.combo { color: #f59e0b; font-size: 28px; }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-45px) scale(1.4); opacity: 0; } }
+  .m3-goal { text-align: center; margin: 0 0 14px; font-size: 16px; font-weight: 700; color: #4a3f5c; }
+  .m3-goal-bar { height: 14px; background: rgba(255,255,255,.7); border-radius: 10px; overflow: hidden; margin-top: 6px; max-width: 460px; margin-left: auto; margin-right: auto; border: 2px solid #fff; }
+  .m3-goal-fill { height: 100%; background: linear-gradient(90deg, #4ade80, #22c55e, #16a34a); transition: width .4s; width: 0; }
+
+  /* ===== Balloon Pop (打气球) ===== */
+  .balloon-area {
+    position: relative; width: 100%; max-width: 560px; height: 480px; margin: 0 auto;
+    background: linear-gradient(to bottom, #87ceeb 0%, #b0e0e6 50%, #98fb98 50%, #7cba5f 100%);
+    border-radius: 24px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    cursor: crosshair;
+  }
+  .balloon-cloud { position: absolute; font-size: 48px; opacity: .8; animation: float 6s ease infinite; }
+  .balloon {
+    position: absolute; cursor: pointer; user-select: none;
+    font-size: 48px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25));
+    transition: transform .1s;
+  }
+  .balloon:hover { transform: scale(1.15); }
+  .balloon.popping { animation: balloonPop .4s ease forwards; pointer-events: none; }
+  @keyframes balloonPop {
+    0% { transform: scale(1); opacity: 1; }
+    40% { transform: scale(1.5); opacity: .8; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+  .balloon-string {
+    position: absolute; bottom: -14px; left: 50%; width: 1px; height: 16px;
+    background: #666; transform: translateX(-50%);
+  }
+  .balloon-score-popup {
+    position: absolute; font-size: 22px; font-weight: 900; pointer-events: none; z-index: 20;
+    text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff; animation: floatUp 1s ease forwards;
+  }
+  .balloon-particle {
+    position: absolute; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 15;
+    animation: balloonParticle .5s ease-out forwards;
+  }
+  @keyframes balloonParticle {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx, 30px), var(--ty, -30px)) scale(0); opacity: 0; }
+  }
+  .balloon-area.shake { animation: shakeArea .3s; }
+  @keyframes shakeArea { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-4px, 2px); } 75% { transform: translate(4px, -2px); } }
+  .balloon-combo {
+    position: absolute; top: 12px; right: 12px; font-size: 24px; font-weight: 900; color: #ff6b9d;
+    text-shadow: 2px 2px 0 #fff; z-index: 30; opacity: 0; transition: opacity .3s;
+  }
+  .balloon-combo.show { opacity: 1; animation: pop .3s; }
+
+  /* ===== Math Game ===== */
+  .math-box {
+    background: #fff; border-radius: 28px; padding: 40px 30px; text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12); max-width: 520px; margin: 0 auto;
+  }
+  .math-question { font-size: 56px; font-weight: 900; color: #4a3f5c; margin: 20px 0; }
+  .math-question .num { color: #ff6b9d; }
+  .math-question .op { color: #38bdf8; }
+  .math-choices { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 24px; }
+  .choice-btn {
+    padding: 22px; font-size: 32px; font-weight: 800; border: none; border-radius: 18px;
+    background: linear-gradient(135deg,#a1c4fd,#c2e9fb); color: #4a3f5c; cursor: pointer;
+    box-shadow: 0 5px 12px rgba(0,0,0,.12); transition: transform .15s;
+  }
+  .choice-btn:hover { transform: scale(1.05); }
+  .choice-btn.correct { background: linear-gradient(135deg,#86efac,#4ade80); color: #fff; animation: pop .4s; }
+  .choice-btn.wrong { background: linear-gradient(135deg,#fca5a5,#f87171); color: #fff; animation: shake .4s; }
+
+  /* ===== Color Game ===== */
+  .color-zone {
+    background: #fff; border-radius: 28px; padding: 30px; text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12); max-width: 560px; margin: 0 auto;
+  }
+  .color-target { font-size: 40px; font-weight: 900; margin: 16px 0 26px; }
+  .color-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .color-opt {
+    height: 90px; border: 5px solid #fff; border-radius: 18px; cursor: pointer;
+    box-shadow: 0 5px 12px rgba(0,0,0,.15); transition: transform .15s;
+  }
+  .color-opt:hover { transform: scale(1.06); }
+  .color-opt.correct { animation: pop .4s; box-shadow: 0 0 0 6px #4ade80; }
+  .color-opt.wrong { animation: shake .4s; box-shadow: 0 0 0 6px #f87171; }
+
+  /* ===== Whack-a-mole ===== */
+  .mole-board {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    max-width: 500px; margin: 0 auto;
+    background: linear-gradient(135deg, #86efac, #4ade80); padding: 16px; border-radius: 24px;
+    box-shadow: inset 0 4px 12px rgba(0,0,0,.15), 0 6px 18px rgba(0,0,0,.15);
+  }
+  .hole {
+    aspect-ratio: 1; position: relative; cursor: pointer; overflow: hidden;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center top, #5c3317 0%, #3d2817 50%, #1a0f08 100%);
+    box-shadow: inset 0 10px 20px rgba(0,0,0,.7), inset 0 -4px 8px rgba(0,0,0,.4), 0 4px 8px rgba(0,0,0,.2);
+  }
+  .hole::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 25%;
+    background: radial-gradient(ellipse at center top, #3d2817 0%, #2a1a0f 100%);
+    border-radius: 0 0 50% 50%;
+  }
+  .mole {
+    position: absolute; left: 15%; width: 70%; height: 70%; bottom: -75%;
+    transition: bottom .3s cubic-bezier(.34,1.56,.64,1);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .mole.up { bottom: 8%; }
+  .mole.whacked { animation: moleWhack .3s ease; }
+  @keyframes moleWhack { 0% { transform: scale(1); } 50% { transform: scale(.85) translateY(8px); } 100% { transform: scale(1); } }
+  .mole svg { width: 100%; height: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,.3)); }
+  .mole.hit-stars {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    font-size: 24px; pointer-events: none; animation: floatUp .8s ease forwards;
+  }
+
+  /* ============ Feedback ============ */
+  .toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-200px);
+    background: #fff; padding: 18px 36px; border-radius: 50px; font-size: 24px; font-weight: 900;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2); z-index: 1000; transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.good { color: #16a34a; }
+  .toast.bad { color: #dc2626; }
+
+  .confetti { position: fixed; width: 12px; height: 12px; top: -20px; z-index: 999; pointer-events: none; border-radius: 2px; }
+
+  /* ============ Result modal ============ */
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none;
+    align-items: center; justify-content: center; z-index: 2000; animation: pop .3s;
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: #fff; border-radius: 30px; padding: 40px; text-align: center;
+    max-width: 400px; width: 90%; box-shadow: 0 16px 40px rgba(0,0,0,.3);
+  }
+  .modal-emoji { font-size: 80px; display: block; margin-bottom: 16px; animation: wiggle 1s ease infinite; }
+  .modal-title { font-size: 32px; font-weight: 900; color: #4a3f5c; margin-bottom: 10px; }
+  .modal-text { font-size: 18px; color: #888; margin-bottom: 24px; }
+  .modal-btns { display: flex; gap: 12px; justify-content: center; }
+  .btn {
+    padding: 14px 28px; border: none; border-radius: 50px; font-size: 18px; font-weight: 800;
+    cursor: pointer; transition: transform .15s; box-shadow: 0 5px 14px rgba(0,0,0,.15);
+  }
+  .btn:hover { transform: scale(1.06); }
+  .btn-primary { background: linear-gradient(135deg,#ff6b9d,#ff8fab); color: #fff; }
+  .btn-secondary { background: #e5e7eb; color: #4a3f5c; }
+
+  @media (max-width: 480px) {
+    .logo { font-size: 26px; }
+    .lobby h1 { font-size: 32px; }
+    .game-card .emoji { font-size: 50px; }
+    .math-question { font-size: 42px; }
+    .choice-btn { font-size: 26px; padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="logo">🌈 快乐乐园</div>
+    <button class="home-btn" onclick="showLobby()">🏠 首页</button>
+  </div>
+
+  <!-- Lobby -->
+  <div id="lobby" class="lobby screen active">
+    <h1>小朋友的快乐乐园 🎉</h1>
+    <p class="subtitle">选一个喜欢的游戏，开始玩耍吧！</p>
+    <div class="game-grid">
+      <div class="game-card" onclick="startGame('match3')">
+        <span class="emoji">🍬</span>
+        <div class="name">消消乐连连看</div>
+        <div class="desc">交换相邻糖果，三个连在一起就能消除！</div>
+      </div>
+      <div class="game-card" onclick="startGame('math')">
+        <span class="emoji">🔢</span>
+        <div class="name">算术小达人</div>
+        <div class="desc">算一算，哪个答案才是对的？</div>
+      </div>
+      <div class="game-card" onclick="startGame('color')">
+        <span class="emoji">🎨</span>
+        <div class="name">颜色连连看</div>
+        <div class="desc">听名字，找出正确的颜色！</div>
+      </div>
+      <div class="game-card" onclick="startGame('mole')">
+        <span class="emoji">🔨</span>
+        <div class="name">打地鼠</div>
+        <div class="desc">地鼠冒出来啦，快点敲它们！</div>
+      </div>
+      <div class="game-card" onclick="startGame('balloon')">
+        <span class="emoji">🎈</span>
+        <div class="name">欢乐打气球</div>
+        <div class="desc">彩色气球飞上天，点破它们得分！小心炸弹哦～</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Match-3 Game -->
+  <div id="game-match3" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">🍬 消消乐连连看</div>
+      <div class="stat">得分: <span id="m3-score">0</span> ｜ 步数: <span id="m3-moves">0</span>/20</div>
+    </div>
+    <div class="m3-goal">🎯 目标: 达到 <b>300 分</b>
+      <div class="m3-goal-bar"><div id="m3-goal-fill" class="m3-goal-fill"></div></div>
+    </div>
+    <div id="match3-board" class="match3-board"></div>
+  </div>
+
+  <!-- Math Game -->
+  <div id="game-math" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">🔢 算术小达人</div>
+      <div class="stat">得分: <span id="math-score">0</span> ｜ 第 <span id="math-q">1</span>/10 题</div>
+    </div>
+    <div class="math-box">
+      <div id="math-question" class="math-question"></div>
+      <div id="math-choices" class="math-choices"></div>
+    </div>
+  </div>
+
+  <!-- Color Game -->
+  <div id="game-color" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">🎨 颜色连连看</div>
+      <div class="stat">得分: <span id="color-score">0</span> ｜ 第 <span id="color-q">1</span>/10 题</div>
+    </div>
+    <div class="color-zone">
+      <p style="font-size:18px;color:#888;">请找出这个颜色：</p>
+      <div id="color-target" class="color-target"></div>
+      <div id="color-options" class="color-options"></div>
+    </div>
+  </div>
+
+  <!-- Mole Game -->
+  <div id="game-mole" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">🔨 打地鼠</div>
+      <div class="stat">得分: <span id="mole-score">0</span> ｜ 时间: <span id="mole-time">30</span>s</div>
+    </div>
+    <div id="mole-board" class="mole-board"></div>
+  </div>
+
+  <!-- Balloon Pop Game -->
+  <div id="game-balloon" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">🎈 欢乐打气球</div>
+      <div class="stat">得分: <span id="balloon-score">0</span> ｜ 时间: <span id="balloon-time">30</span>s</div>
+    </div>
+    <div id="balloon-area" class="balloon-area">
+      <div id="balloon-combo" class="balloon-combo"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Result Modal -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <span id="modal-emoji" class="modal-emoji">🎉</span>
+    <div id="modal-title" class="modal-title">太棒啦！</div>
+    <div id="modal-text" class="modal-text"></div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="restartGame()">🔄 再玩一次</button>
+      <button class="btn btn-secondary" onclick="showLobby()">🏠 回首页</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============== Utilities ==============
+const praiseWords = ["太棒了！", "真聪明！", "好厉害！", "答对啦！", "你真棒！", "太厉害啦！", "继续加油！"];
+const cheerWords = ["没关系～", "再试试！", "差一点点！", "加油哦！"];
+
+function showToast(msg, type="good") {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1200);
+}
+
+function confetti() {
+  const colors = ['#ff6b9d','#fbbf24','#38bdf8','#4ade80','#a78bfa','#fb923c'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animation = `confetti-fall ${1+Math.random()*1.5}s linear forwards`;
+    c.style.animationDelay = Math.random()*0.3 + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 3000);
+  }
+}
+
+// ============== Sound (Web Audio API) ==============
+let audioCtx = null;
+function beep(freq, duration, type='sine', vol=0.15) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    o.stop(audioCtx.currentTime + duration);
+  } catch(e) {}
+}
+function sndCorrect() { beep(523,.1); setTimeout(()=>beep(659,.1),100); setTimeout(()=>beep(784,.15),200); }
+function sndWrong() { beep(200,.25,'sawtooth',.1); }
+function sndClick() { beep(440,.06,'square',.08); }
+function sndPop() { beep(800,.08,'triangle',.12); }
+function sndWin() { [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2,'triangle',.15),i*120)); }
+
+// ============== Screen management ==============
+let currentGame = null;
+function showLobby() {
+  sndClick();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('lobby').classList.add('active');
+  stopMole();
+  stopBalloon();
+  closeModal();
+  currentGame = null;
+}
+function startGame(name) {
+  sndClick();
+  currentGame = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('game-'+name).classList.add('active');
+  if (name==='match3') initMatch3();
+  if (name==='math') initMath();
+  if (name==='color') initColor();
+  if (name==='mole') initMole();
+  if (name==='balloon') initBalloon();
+}
+function restartGame() {
+  sndClick();
+  closeModal();
+  if (currentGame) startGame(currentGame);
+}
+function showResult(emoji, title, text) {
+  document.getElementById('modal-emoji').textContent = emoji;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-text').textContent = text;
+  document.getElementById('modal').classList.add('show');
+  sndWin(); confetti();
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+// ============== Match-3 (消消乐) ==============
+const m3Emojis = ['🍎','🍌','🍇','🍓','🍊','🍒'];
+const m3Rows = 6, m3Cols = 6;
+const m3Goal = 300;
+let m3Grid = [], m3Sel = null, m3Score = 0, m3Moves = 0, m3MaxMoves = 20, m3Busy = false;
+let m3Combo = 0;
+
+function initMatch3() {
+  m3Grid = []; m3Sel = null; m3Score = 0; m3Moves = 0; m3Busy = false; m3Combo = 0;
+  document.getElementById('m3-score').textContent = 0;
+  document.getElementById('m3-moves').textContent = 0;
+  document.getElementById('m3-goal-fill').style.width = '0%';
+  // 生成不包含初始三连的棋盘
+  for (let r = 0; r < m3Rows; r++) {
+    const row = [];
+    for (let c = 0; c < m3Cols; c++) {
+      let emoji;
+      do {
+        emoji = m3Emojis[Math.floor(Math.random()*m3Emojis.length)];
+      } while (
+        (c >= 2 && row[c-1].emoji === emoji && row[c-2].emoji === emoji) ||
+        (r >= 2 && m3Grid[r-1][c].emoji === emoji && m3Grid[r-2][c].emoji === emoji)
+      );
+      row.push({emoji, special: false});
+    }
+    m3Grid.push(row);
+  }
+  renderM3();
+}
+
+function renderM3() {
+  const board = document.getElementById('match3-board');
+  board.innerHTML = '';
+  for (let r = 0; r < m3Rows; r++) {
+    for (let c = 0; c < m3Cols; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'm3-cell' + (m3Grid[r][c] && m3Grid[r][c].special ? ' special' : '');
+      const val = m3Grid[r][c] ? m3Grid[r][c].emoji : '';
+      cell.textContent = val;
+      cell.onclick = () => selectM3(r, c);
+      cell.dataset.r = r; cell.dataset.c = c;
+      board.appendChild(cell);
+    }
+  }
+}
+
+function getCellEl(r, c) {
+  return document.querySelector(`#match3-board .m3-cell[data-r="${r}"][data-c="${c}"]`);
+}
+
+function cellVal(r, c) { return m3Grid[r][c] ? m3Grid[r][c].emoji : null; }
+
+function selectM3(r, c) {
+  if (m3Busy) return;
+  const el = getCellEl(r, c);
+  if (!m3Sel) {
+    m3Sel = {r, c};
+    el.classList.add('selected');
+    sndClick();
+    return;
+  }
+  // 点击同一格：取消选中
+  if (m3Sel.r === r && m3Sel.c === c) {
+    el.classList.remove('selected');
+    m3Sel = null;
+    sndClick();
+    return;
+  }
+  const dr = Math.abs(m3Sel.r - r), dc = Math.abs(m3Sel.c - c);
+  if (dr + dc === 1) {
+    // 相邻：立即交换
+    getCellEl(m3Sel.r, m3Sel.c).classList.remove('selected');
+    trySwap(m3Sel.r, m3Sel.c, r, c);
+  } else {
+    // 不相邻：直接切换选中
+    getCellEl(m3Sel.r, m3Sel.c).classList.remove('selected');
+    m3Sel = {r, c};
+    el.classList.add('selected');
+    sndClick();
+  }
+}
+
+async function trySwap(r1, c1, r2, c2) {
+  m3Busy = true;
+  m3Sel = null;
+  [m3Grid[r1][c1], m3Grid[r2][c2]] = [m3Grid[r2][c2], m3Grid[r1][c1]];
+  renderM3();
+  const matches = findMatches();
+  if (matches.length > 0) {
+    m3Moves++;
+    m3Combo = 0;
+    document.getElementById('m3-moves').textContent = m3Moves;
+    await resolveMatches(matches);
+  } else {
+    sndWrong();
+    await sleep(300);
+    [m3Grid[r1][c1], m3Grid[r2][c2]] = [m3Grid[r2][c2], m3Grid[r1][c1]];
+    renderM3();
+  }
+  m3Busy = false;
+  const goalMet = m3Score >= m3Goal;
+  if (m3Moves >= m3MaxMoves || goalMet) {
+    setTimeout(() => {
+      const stars = goalMet ? '🏆' : m3Score >= 200 ? '🎉' : '🍬';
+      const msg = goalMet ? `恭喜达成目标！最终得分 ${m3Score} 分，你是消消乐大师！` : `步数用完啦，得分 ${m3Score} 分，差一点点就达成目标了，再试一次吧！`;
+      showResult(stars, goalMet ? '目标达成！' : '步数用完啦！', msg);
+    }, 400);
+  }
+}
+
+function findMatches() {
+  const matches = new Set();
+  // 横向
+  for (let r = 0; r < m3Rows; r++) {
+    let run = 1;
+    for (let c = 1; c <= m3Cols; c++) {
+      if (c < m3Cols && cellVal(r,c) && cellVal(r,c) === cellVal(r,c-1)) {
+        run++;
+      } else {
+        if (run >= 3) {
+          for (let k = c - run; k < c; k++) matches.add(r+','+k);
+        }
+        run = 1;
+      }
+    }
+  }
+  // 纵向
+  for (let c = 0; c < m3Cols; c++) {
+    let run = 1;
+    for (let r = 1; r <= m3Rows; r++) {
+      if (r < m3Rows && cellVal(r,c) && cellVal(r,c) === cellVal(r-1,c)) {
+        run++;
+      } else {
+        if (run >= 3) {
+          for (let k = r - run; k < r; k++) matches.add(k+','+c);
+        }
+        run = 1;
+      }
+    }
+  }
+  return [...matches].map(s => s.split(',').map(Number));
+}
+
+async function resolveMatches(matches) {
+  m3Combo++;
+  const multiplier = m3Combo; // 连锁倍数
+  // 标记消除动画 + 闪光
+  matches.forEach(([r, c]) => {
+    const el = getCellEl(r, c);
+    if (el) { el.classList.add('removing', 'sparkle'); }
+  });
+  const gained = matches.length * 10 * multiplier;
+  m3Score += gained;
+  document.getElementById('m3-score').textContent = m3Score;
+  // 更新目标进度条
+  const pct = Math.min(100, (m3Score / m3Goal) * 100);
+  document.getElementById('m3-goal-fill').style.width = pct + '%';
+  sndCorrect();
+  // 分数飘字
+  showM3Popup(matches[0][0], matches[0][1], '+' + gained, m3Combo >= 2);
+  if (m3Combo >= 2) showToast(`连击 x${m3Combo}！太棒了！`);
+  else if (matches.length >= 4) showToast('太棒啦！连消！');
+  else showToast(praiseWords[Math.floor(Math.random()*praiseWords.length)]);
+  await sleep(400);
+
+  // 检测是否有4连，生成特殊糖果
+  const specialCells = findSpecialCells(matches);
+
+  // 从棋盘移除
+  matches.forEach(([r, c]) => { m3Grid[r][c] = null; });
+  // 放置特殊糖果
+  specialCells.forEach(({r, c, emoji}) => {
+    m3Grid[r][c] = { emoji, special: true };
+  });
+
+  // 下落
+  for (let c = 0; c < m3Cols; c++) {
+    let writeRow = m3Rows - 1;
+    for (let r = m3Rows - 1; r >= 0; r--) {
+      if (m3Grid[r][c] !== null) {
+        m3Grid[writeRow][c] = m3Grid[r][c];
+        if (writeRow !== r) m3Grid[r][c] = null;
+        writeRow--;
+      }
+    }
+    for (let r = writeRow; r >= 0; r--) {
+      m3Grid[r][c] = { emoji: m3Emojis[Math.floor(Math.random()*m3Emojis.length)], special: false };
+    }
+  }
+  renderM3();
+  await sleep(300);
+
+  const chain = findMatches();
+  if (chain.length > 0) await resolveMatches(chain);
+  else m3Combo = 0;
+}
+
+function showM3Popup(r, c, text, combo) {
+  const board = document.getElementById('match3-board');
+  const el = getCellEl(r, c);
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const boardRect = board.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.className = 'm3-popup' + (combo ? ' combo' : '');
+  popup.textContent = text;
+  popup.style.left = (rect.left - boardRect.left + rect.width/2 - 15) + 'px';
+  popup.style.top = (rect.top - boardRect.top) + 'px';
+  board.appendChild(popup);
+  setTimeout(() => popup.remove(), 1000);
+}
+
+// 检测4连+生成特殊糖果（放在匹配中心）
+function findSpecialCells(matches) {
+  const result = [];
+  const matchSet = new Set(matches.map(m => m.join(',')));
+  // 按行检查横向4+连
+  for (let r = 0; r < m3Rows; r++) {
+    let run = 1;
+    for (let c = 1; c <= m3Cols; c++) {
+      if (c < m3Cols && cellVal(r,c) && cellVal(r,c) === cellVal(r,c-1)) {
+        run++;
+      } else {
+        if (run >= 4) {
+          const center = c - Math.ceil(run/2);
+          result.push({r, c: center, emoji: cellVal(r, center) || '⭐'});
+        }
+        run = 1;
+      }
+    }
+  }
+  // 按列检查纵向4+连
+  for (let c = 0; c < m3Cols; c++) {
+    let run = 1;
+    for (let r = 1; r <= m3Rows; r++) {
+      if (r < m3Rows && cellVal(r,c) && cellVal(r,c) === cellVal(r-1,c)) {
+        run++;
+      } else {
+        if (run >= 4) {
+          const center = r - Math.ceil(run/2);
+          result.push({r: center, c, emoji: cellVal(center, c) || '⭐'});
+        }
+        run = 1;
+      }
+    }
+  }
+  return result;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============== Math Game ==============
+let mathScore = 0, mathQ = 0, mathTotal = 10, mathAnswer = 0;
+function initMath() { mathScore = 0; mathQ = 0; nextMath(); }
+function nextMath() {
+  mathQ++;
+  if (mathQ > mathTotal) {
+    const stars = mathScore >= 9 ? '🏆' : mathScore >= 7 ? '🎉' : '👍';
+    showResult(stars, '闯关结束！', `答对 ${mathScore} / ${mathTotal} 题，${mathScore>=7?'你真是算术小达人！':'多练习就会更厉害哦！'}`);
+    return;
+  }
+  document.getElementById('math-score').textContent = mathScore;
+  document.getElementById('math-q').textContent = mathQ;
+  const op = Math.random() > 0.5 ? '+' : '-';
+  let a, b;
+  if (op === '+') { a = rand(1, 10); b = rand(1, 10); mathAnswer = a + b; }
+  else { a = rand(1, 10); b = rand(1, a); mathAnswer = a - b; }
+  document.getElementById('math-question').innerHTML = `<span class="num">${a}</span> <span class="op">${op}</span> <span class="num">${b}</span> <span class="op">=</span> ?`;
+  const choices = new Set([mathAnswer]);
+  while (choices.size < 4) {
+    const wrong = mathAnswer + rand(-4, 4);
+    if (wrong >= 0 && wrong !== mathAnswer) choices.add(wrong);
+  }
+  const arr = [...choices].sort(() => Math.random()-0.5);
+  const box = document.getElementById('math-choices');
+  box.innerHTML = '';
+  arr.forEach(v => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = v;
+    btn.onclick = () => answerMath(btn, v);
+    box.appendChild(btn);
+  });
+}
+function answerMath(btn, val) {
+  if (val === mathAnswer) {
+    mathScore++;
+    document.getElementById('math-score').textContent = mathScore;
+    btn.classList.add('correct');
+    sndCorrect();
+    showToast(praiseWords[Math.floor(Math.random()*praiseWords.length)]);
+    setTimeout(nextMath, 700);
+  } else {
+    btn.classList.add('wrong');
+    sndWrong();
+    showToast(cheerWords[Math.floor(Math.random()*cheerWords.length)], 'bad');
+    setTimeout(() => btn.classList.remove('wrong'), 700);
+  }
+}
+
+// ============== Color Game ==============
+const colorList = [
+  {name:'红色', hex:'#ef4444'}, {name:'橙色', hex:'#f97316'}, {name:'黄色', hex:'#eab308'},
+  {name:'绿色', hex:'#22c55e'}, {name:'蓝色', hex:'#3b82f6'}, {name:'紫色', hex:'#a855f7'},
+  {name:'粉色', hex:'#ec4899'}, {name:'青色', hex:'#06b6d4'}, {name:'棕色', hex:'#92400e'}
+];
+let colorScore = 0, colorQ = 0, colorTotal = 10, colorTarget = null;
+function initColor() { colorScore = 0; colorQ = 0; nextColor(); }
+function nextColor() {
+  colorQ++;
+  if (colorQ > colorTotal) {
+    const stars = colorScore >= 9 ? '🎨' : colorScore >= 7 ? '🎉' : '🌈';
+    showResult(stars, '认色达人！', `答对 ${colorScore} / ${colorTotal} 题，你认识好多颜色呀！`);
+    return;
+  }
+  document.getElementById('color-score').textContent = colorScore;
+  document.getElementById('color-q').textContent = colorQ;
+  const shuffled = [...colorList].sort(() => Math.random()-0.5);
+  const options = shuffled.slice(0, 4);
+  colorTarget = options[Math.floor(Math.random()*4)];
+  const target = document.getElementById('color-target');
+  target.textContent = colorTarget.name;
+  // 用一个随机颜色来显示文字，增加难度一点点（但仍用目标色名）
+  target.style.color = shuffled[0].hex;
+  const box = document.getElementById('color-options');
+  box.innerHTML = '';
+  options.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'color-opt';
+    div.style.background = c.hex;
+    div.onclick = () => answerColor(div, c);
+    box.appendChild(div);
+  });
+}
+function answerColor(el, c) {
+  if (c.hex === colorTarget.hex) {
+    colorScore++;
+    document.getElementById('color-score').textContent = colorScore;
+    el.classList.add('correct');
+    sndCorrect();
+    showToast(praiseWords[Math.floor(Math.random()*praiseWords.length)]);
+    setTimeout(nextColor, 700);
+  } else {
+    el.classList.add('wrong');
+    sndWrong();
+    showToast(cheerWords[Math.floor(Math.random()*cheerWords.length)], 'bad');
+    setTimeout(() => el.classList.remove('wrong'), 600);
+  }
+}
+
+// ============== Mole Game ==============
+let moleScore = 0, moleTime = 30, moleTimer = null, molePopTimer = null, moleActive = false;
+// 可爱地鼠 SVG
+const moleSVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- 身体 -->
+  <ellipse cx="50" cy="62" rx="32" ry="30" fill="#a16207"/>
+  <ellipse cx="50" cy="62" rx="26" ry="24" fill="#ca8a04"/>
+  <!-- 肚子 -->
+  <ellipse cx="50" cy="70" rx="16" ry="12" fill="#fde68a"/>
+  <!-- 头 -->
+  <circle cx="50" cy="42" r="26" fill="#a16207"/>
+  <circle cx="50" cy="42" r="21" fill="#ca8a04"/>
+  <!-- 耳朵 -->
+  <ellipse cx="28" cy="28" rx="7" ry="9" fill="#a16207"/>
+  <ellipse cx="72" cy="28" rx="7" ry="9" fill="#a16207"/>
+  <ellipse cx="28" cy="29" rx="4" ry="5" fill="#fbbf24"/>
+  <ellipse cx="72" cy="29" rx="4" ry="5" fill="#fbbf24"/>
+  <!-- 眼睛 -->
+  <circle cx="40" cy="40" r="5" fill="#fff"/>
+  <circle cx="60" cy="40" r="5" fill="#fff"/>
+  <circle cx="41" cy="41" r="3" fill="#1f2937"/>
+  <circle cx="61" cy="41" r="3" fill="#1f2937"/>
+  <circle cx="42" cy="40" r="1" fill="#fff"/>
+  <circle cx="62" cy="40" r="1" fill="#fff"/>
+  <!-- 鼻子 -->
+  <ellipse cx="50" cy="48" rx="4" ry="3" fill="#7c2d12"/>
+  <!-- 嘴巴 -->
+  <path d="M 44 53 Q 50 58 56 53" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- 门牙 -->
+  <rect x="47" y="53" width="3" height="5" rx="1" fill="#fff"/>
+  <rect x="50" y="53" width="3" height="5" rx="1" fill="#fff"/>
+  <!-- 胡须 -->
+  <line x1="30" y1="48" x2="20" y2="46" stroke="#7c2d12" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="30" y1="51" x2="20" y2="52" stroke="#7c2d12" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="70" y1="48" x2="80" y2="46" stroke="#7c2d12" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="70" y1="51" x2="80" y2="52" stroke="#7c2d12" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
+
+// 炸弹地鼠 SVG
+const bombSVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="58" r="30" fill="#1f2937"/>
+  <circle cx="50" cy="58" r="24" fill="#374151"/>
+  <circle cx="42" cy="50" r="5" fill="#6b7280" opacity=".6"/>
+  <!-- 引线 -->
+  <path d="M 50 28 Q 58 18 65 22" stroke="#92400e" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 火花 -->
+  <circle cx="65" cy="22" r="4" fill="#fbbf24"/>
+  <circle cx="65" cy="22" r="2" fill="#f97316"/>
+  <!-- 眼睛 -->
+  <circle cx="40" cy="55" r="4" fill="#fff"/>
+  <circle cx="60" cy="55" r="4" fill="#fff"/>
+  <circle cx="40" cy="56" r="2" fill="#1f2937"/>
+  <circle cx="60" cy="56" r="2" fill="#1f2937"/>
+  <!-- 嘴巴 -->
+  <path d="M 42 68 Q 50 62 58 68" stroke="#1f2937" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>`;
+
+function initMole() {
+  moleScore = 0; moleTime = 30; moleActive = true;
+  document.getElementById('mole-score').textContent = 0;
+  document.getElementById('mole-time').textContent = 30;
+  const board = document.getElementById('mole-board');
+  board.innerHTML = '';
+  for (let i = 0; i < 9; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.innerHTML = '<div class="mole"></div>';
+    hole.onclick = () => whack(hole);
+    board.appendChild(hole);
+  }
+  moleTimer = setInterval(() => {
+    moleTime--;
+    document.getElementById('mole-time').textContent = moleTime;
+    if (moleTime <= 0) endMole();
+  }, 1000);
+  scheduleMole();
+}
+function scheduleMole() {
+  if (!moleActive) return;
+  const delay = rand(400, 800);
+  molePopTimer = setTimeout(() => {
+    popMole();
+    scheduleMole();
+  }, delay);
+}
+function popMole() {
+  const holes = document.querySelectorAll('#mole-board .hole');
+  const available = [...holes].filter(h => !h.querySelector('.mole').classList.contains('up'));
+  if (!available.length) return;
+  const hole = available[Math.floor(Math.random()*available.length)];
+  const mole = hole.querySelector('.mole');
+  const isBomb = Math.random() < 0.18;
+  mole.innerHTML = isBomb ? bombSVG : moleSVG;
+  mole._value = isBomb ? -1 : 1;
+  mole.classList.add('up');
+  setTimeout(() => {
+    if (mole.classList.contains('up') && !mole.classList.contains('whacked')) {
+      mole.classList.remove('up');
+    }
+  }, rand(800, 1400));
+}
+function whack(hole) {
+  if (!moleActive) return;
+  const mole = hole.querySelector('.mole');
+  if (!mole.classList.contains('up')) return;
+  const val = mole._value || 1;
+  mole.classList.add('whacked');
+  mole.classList.remove('up');
+  // 击中星星效果
+  const stars = document.createElement('div');
+  stars.className = 'mole hit-stars';
+  stars.textContent = val > 0 ? '⭐' : '💥';
+  hole.appendChild(stars);
+  setTimeout(() => stars.remove(), 800);
+  if (val > 0) {
+    moleScore++;
+    document.getElementById('mole-score').textContent = moleScore;
+    sndPop();
+    showToast('+1', 'good');
+  } else {
+    moleScore = Math.max(0, moleScore - 2);
+    document.getElementById('mole-score').textContent = moleScore;
+    sndWrong();
+    showToast('-2 小心炸弹！', 'bad');
+  }
+  setTimeout(() => mole.classList.remove('whacked'), 300);
+}
+function stopMole() {
+  moleActive = false;
+  clearInterval(moleTimer);
+  clearTimeout(molePopTimer);
+}
+function endMole() {
+  stopMole();
+  const stars = moleScore >= 20 ? '🏆' : moleScore >= 12 ? '🎉' : '👍';
+  showResult(stars, '时间到！', `你敲到了 ${moleScore} 只地鼠，${moleScore>=12?'手速真快！':'下次再接再厉！'}`);
+}
+
+// ============== Balloon Pop Game (打气球) ==============
+let balloonScore = 0, balloonTime = 30, balloonActive = false;
+let balloonTimer = null, balloonSpawnTimer = null, balloonCombo = 0;
+// 气球类型：emoji, 分数, 颜色
+const balloonTypes = [
+  {emoji: '🎈', points: 1, color: '#ef4444'},
+  {emoji: '🎈', points: 1, color: '#3b82f6'},
+  {emoji: '🎈', points: 1, color: '#22c55e'},
+  {emoji: '🎈', points: 1, color: '#f59e0b'},
+  {emoji: '🎈', points: 1, color: '#a855f7'},
+  {emoji: '🎈', points: 2, color: '#ec4899'},
+  {emoji: '⭐', points: 5, color: '#fbbf24'},
+];
+const balloonBombs = [
+  {emoji: '💣', penalty: 3, color: '#1f2937'},
+  {emoji: '💀', penalty: 2, color: '#6b7280'},
+];
+
+function initBalloon() {
+  balloonScore = 0; balloonTime = 30; balloonActive = true; balloonCombo = 0;
+  document.getElementById('balloon-score').textContent = 0;
+  document.getElementById('balloon-time').textContent = 30;
+  const area = document.getElementById('balloon-area');
+  area.querySelectorAll('.balloon, .balloon-particle, .balloon-score-popup').forEach(el => el.remove());
+  // 添加几朵云
+  for (let i = 0; i < 4; i++) {
+    const cloud = document.createElement('div');
+    cloud.className = 'balloon-cloud';
+    cloud.textContent = '☁️';
+    cloud.style.left = (5 + i*24) + '%';
+    cloud.style.top = (8 + (i%2)*12) + '%';
+    cloud.style.animationDelay = (i*0.8) + 's';
+    area.appendChild(cloud);
+  }
+  balloonTimer = setInterval(() => {
+    balloonTime--;
+    document.getElementById('balloon-time').textContent = balloonTime;
+    if (balloonTime <= 0) endBalloon();
+  }, 1000);
+  spawnBalloon();
+}
+
+function spawnBalloon() {
+  if (!balloonActive) return;
+  const area = document.getElementById('balloon-area');
+  const isBomb = Math.random() < 0.15;
+  const type = isBomb
+    ? balloonBombs[Math.floor(Math.random()*balloonBombs.length)]
+    : balloonTypes[Math.floor(Math.random()*balloonTypes.length)];
+  const balloon = document.createElement('div');
+  balloon.className = 'balloon';
+  balloon.textContent = type.emoji;
+  balloon.dataset.bad = isBomb ? '1' : '0';
+  balloon.dataset.points = isBomb ? -type.penalty : type.points;
+  balloon.style.color = type.color;
+
+  const x = rand(20, area.offsetWidth - 70);
+  balloon.style.left = x + 'px';
+  balloon.style.top = (area.offsetHeight + 20) + 'px';
+  area.appendChild(balloon);
+
+  const duration = rand(3500, 6000);
+  // 轻微左右摆动上升
+  const sway = rand(-30, 30);
+  const anim = balloon.animate(
+    [
+      { transform: 'translateX(0)', top: (area.offsetHeight + 20) + 'px' },
+      { transform: `translateX(${sway}px)`, top: '-80px' }
+    ],
+    { duration, fill: 'forwards', easing: 'linear' }
+  );
+  balloon._anim = anim;
+
+  balloon.onclick = (e) => {
+    e.stopPropagation();
+    if (balloon.classList.contains('popping')) return;
+    balloon.classList.add('popping');
+    if (balloon._anim) balloon._anim.pause();
+    const bad = balloon.dataset.bad === '1';
+    const points = parseInt(balloon.dataset.points);
+    const rect = area.getBoundingClientRect();
+    const bRect = balloon.getBoundingClientRect();
+    if (bad) {
+      balloonScore = Math.max(0, balloonScore + points);
+      balloonCombo = 0;
+      sndWrong();
+      showBalloonPopup(bRect.left - rect.left, bRect.top - rect.top, points + '', '#f87171');
+      showToast(`${points} 小心炸弹！`, 'bad');
+      area.classList.add('shake');
+      setTimeout(() => area.classList.remove('shake'), 300);
+      // 爆炸粒子
+      createParticles(area, bRect.left - rect.left + 20, bRect.top - rect.top + 20, '#f87171');
+    } else {
+      balloonCombo++;
+      const comboMult = Math.min(balloonCombo, 5);
+      const gained = points * comboMult;
+      balloonScore += gained;
+      sndCorrect();
+      showBalloonPopup(bRect.left - rect.left, bRect.top - rect.top, '+' + gained, type.color);
+      if (balloonCombo >= 2) showToast(`连击 x${balloonCombo}！`);
+      // 彩色粒子
+      createParticles(area, bRect.left - rect.left + 20, bRect.top - rect.top + 20, type.color);
+    }
+    document.getElementById('balloon-score').textContent = balloonScore;
+    updateBalloonCombo();
+    setTimeout(() => balloon.remove(), 400);
+  };
+
+  // 飞出屏幕自动移除
+  setTimeout(() => { if (balloon.parentNode) balloon.remove(); }, duration + 200);
+
+  const nextDelay = rand(300, 700);
+  balloonSpawnTimer = setTimeout(spawnBalloon, nextDelay);
+}
+
+function createParticles(area, x, y, color) {
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'balloon-particle';
+    p.style.background = color;
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    const angle = (Math.PI * 2 / 6) * i;
+    const dist = rand(20, 40);
+    p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+    area.appendChild(p);
+    setTimeout(() => p.remove(), 500);
+  }
+}
+
+function showBalloonPopup(x, y, text, color) {
+  const area = document.getElementById('balloon-area');
+  const popup = document.createElement('div');
+  popup.className = 'balloon-score-popup';
+  popup.textContent = text;
+  popup.style.color = color;
+  popup.style.left = x + 'px';
+  popup.style.top = y + 'px';
+  area.appendChild(popup);
+  setTimeout(() => popup.remove(), 1000);
+}
+
+function updateBalloonCombo() {
+  const el = document.getElementById('balloon-combo');
+  if (balloonCombo >= 2) {
+    el.textContent = `🔥 连击 x${balloonCombo}`;
+    el.classList.add('show');
+  } else {
+    el.classList.remove('show');
+  }
+}
+
+function stopBalloon() {
+  balloonActive = false;
+  clearInterval(balloonTimer);
+  clearTimeout(balloonSpawnTimer);
+}
+function endBalloon() {
+  stopBalloon();
+  const stars = balloonScore >= 30 ? '🏆' : balloonScore >= 18 ? '🎉' : '🎈';
+  showResult(stars, '时间到！', `你获得了 ${balloonScore} 分，${balloonScore>=18?'真是气球高手！':'多练习就能百发百中！'}`);
+}
+
+function rand(a, b) { return Math.floor(Math.random()*(b-a+1))+a; }
+
+// 首次点击激活音频
+document.addEventListener('click', () => { try { audioCtx?.resume(); } catch(e){} }, { once: false });
+</script>
+</body>
+</html>
