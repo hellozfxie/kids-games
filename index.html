@@ -326,9 +326,9 @@
   <div id="game-match3" class="screen">
     <div class="screen-header">
       <div class="screen-title">🍬 消消乐连连看</div>
-      <div class="stat">得分: <span id="m3-score">0</span> ｜ 步数: <span id="m3-moves">0</span>/20</div>
+      <div class="stat">第 <span id="m3-level">1</span> 关 ｜ 得分: <span id="m3-score">0</span> ｜ 步数: <span id="m3-moves">0</span>/<span id="m3-maxmoves">20</span></div>
     </div>
-    <div class="m3-goal">🎯 目标: 达到 <b>300 分</b>
+    <div class="m3-goal">🎯 目标: 达到 <b id="m3-goal-num">300</b> 分
       <div class="m3-goal-bar"><div id="m3-goal-fill" class="m3-goal-fill"></div></div>
     </div>
     <div id="match3-board" class="match3-board"></div>
@@ -338,7 +338,7 @@
   <div id="game-math" class="screen">
     <div class="screen-header">
       <div class="screen-title">🔢 算术小达人</div>
-      <div class="stat">得分: <span id="math-score">0</span> ｜ 第 <span id="math-q">1</span>/10 题</div>
+      <div class="stat">得分: <span id="math-score">0</span> ｜ 第 <span id="math-q">1</span>/20 题</div>
     </div>
     <div class="math-box">
       <div id="math-question" class="math-question"></div>
@@ -372,7 +372,7 @@
   <div id="game-balloon" class="screen">
     <div class="screen-header">
       <div class="screen-title">🎈 欢乐打气球</div>
-      <div class="stat">得分: <span id="balloon-score">0</span> ｜ 时间: <span id="balloon-time">30</span>s</div>
+      <div class="stat">第 <span id="balloon-level">1</span> 关 ｜ 得分: <span id="balloon-score">0</span>/<span id="balloon-target">20</span> ｜ 时间: <span id="balloon-time">30</span>s</div>
     </div>
     <div id="balloon-area" class="balloon-area">
       <div id="balloon-combo" class="balloon-combo"></div>
@@ -389,6 +389,7 @@
     <div id="modal-title" class="modal-title">太棒啦！</div>
     <div id="modal-text" class="modal-text"></div>
     <div class="modal-btns">
+      <button id="modal-next-btn" class="btn btn-primary" style="display:none;" onclick="nextLevel()">➡️ 下一关</button>
       <button class="btn btn-primary" onclick="restartGame()">🔄 再玩一次</button>
       <button class="btn btn-secondary" onclick="showLobby()">🏠 回首页</button>
     </div>
@@ -468,13 +469,25 @@ function startGame(name) {
 function restartGame() {
   sndClick();
   closeModal();
+  // 重置关卡
+  if (currentGame === 'match3') m3Level = 1;
+  if (currentGame === 'balloon') balloonLevel = 1;
   if (currentGame) startGame(currentGame);
 }
-function showResult(emoji, title, text) {
+function nextLevel() {
+  sndClick();
+  closeModal();
+  if (currentGame === 'match3') m3Level++;
+  if (currentGame === 'balloon') balloonLevel++;
+  if (currentGame) startGame(currentGame);
+}
+function showResult(emoji, title, text, hasNext=false) {
   document.getElementById('modal-emoji').textContent = emoji;
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-text').textContent = text;
   document.getElementById('modal').classList.add('show');
+  // 显示/隐藏下一关按钮
+  document.getElementById('modal-next-btn').style.display = hasNext ? 'inline-block' : 'none';
   sndWin(); confetti();
 }
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
@@ -482,14 +495,27 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 // ============== Match-3 (消消乐) ==============
 const m3Emojis = ['🍎','🍌','🍇','🍓','🍊','🍒'];
 const m3Rows = 6, m3Cols = 6;
-const m3Goal = 300;
 let m3Grid = [], m3Sel = null, m3Score = 0, m3Moves = 0, m3MaxMoves = 20, m3Busy = false;
-let m3Combo = 0;
+let m3Combo = 0, m3Level = 1, m3Goal = 300;
+
+// 关卡配置：目标分数 & 步数
+function m3LevelConfig(level) {
+  return {
+    goal: 200 + level * 150,        // 1关:350, 2关:500, 3关:650...
+    moves: 18 + level * 2,          // 1关:20, 2关:22, 3关:24...
+  };
+}
 
 function initMatch3() {
+  const cfg = m3LevelConfig(m3Level);
+  m3Goal = cfg.goal;
+  m3MaxMoves = cfg.moves;
   m3Grid = []; m3Sel = null; m3Score = 0; m3Moves = 0; m3Busy = false; m3Combo = 0;
+  document.getElementById('m3-level').textContent = m3Level;
   document.getElementById('m3-score').textContent = 0;
   document.getElementById('m3-moves').textContent = 0;
+  document.getElementById('m3-maxmoves').textContent = m3MaxMoves;
+  document.getElementById('m3-goal-num').textContent = m3Goal;
   document.getElementById('m3-goal-fill').style.width = '0%';
   // 生成不包含初始三连的棋盘
   for (let r = 0; r < m3Rows; r++) {
@@ -520,6 +546,35 @@ function renderM3() {
       cell.textContent = val;
       cell.onclick = () => selectM3(r, c);
       cell.dataset.r = r; cell.dataset.c = c;
+      // 手机滑动交换
+      let touchStartX = 0, touchStartY = 0, touching = false;
+      cell.addEventListener('touchstart', (e) => {
+        if (m3Busy) return;
+        touching = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, {passive: true});
+      cell.addEventListener('touchend', (e) => {
+        if (!touching) return;
+        touching = false;
+        if (m3Busy) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        const absX = Math.abs(dx), absY = Math.abs(dy);
+        // 滑动距离超过 20px 才触发交换
+        if (Math.max(absX, absY) < 20) return;
+        let tr = r, tc = c;
+        if (absX > absY) {
+          tc += dx > 0 ? 1 : -1;
+        } else {
+          tr += dy > 0 ? 1 : -1;
+        }
+        if (tr < 0 || tr >= m3Rows || tc < 0 || tc >= m3Cols) return;
+        // 滑动方向的目标格高亮并直接交换
+        if (m3Sel) getCellEl(m3Sel.r, m3Sel.c).classList.remove('selected');
+        m3Sel = {r, c};
+        trySwap(r, c, tr, tc);
+      });
       board.appendChild(cell);
     }
   }
@@ -580,11 +635,14 @@ async function trySwap(r1, c1, r2, c2) {
   }
   m3Busy = false;
   const goalMet = m3Score >= m3Goal;
-  if (m3Moves >= m3MaxMoves || goalMet) {
+  if (goalMet) {
     setTimeout(() => {
-      const stars = goalMet ? '🏆' : m3Score >= 200 ? '🎉' : '🍬';
-      const msg = goalMet ? `恭喜达成目标！最终得分 ${m3Score} 分，你是消消乐大师！` : `步数用完啦，得分 ${m3Score} 分，差一点点就达成目标了，再试一次吧！`;
-      showResult(stars, goalMet ? '目标达成！' : '步数用完啦！', msg);
+      showResult('🏆', `第 ${m3Level} 关通过！`, `得分 ${m3Score} 分，达到目标 ${m3Goal} 分！准备好挑战下一关了吗？`, true);
+    }, 400);
+  } else if (m3Moves >= m3MaxMoves) {
+    setTimeout(() => {
+      const stars = m3Score >= m3Goal * 0.6 ? '🎉' : '🍬';
+      showResult(stars, '步数用完啦！', `得分 ${m3Score} 分，差一点点就达成目标了，再试一次吧！`);
     }, 400);
   }
 }
@@ -731,26 +789,31 @@ function findSpecialCells(matches) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ============== Math Game ==============
-let mathScore = 0, mathQ = 0, mathTotal = 10, mathAnswer = 0;
+let mathScore = 0, mathQ = 0, mathTotal = 20, mathAnswer = 0;
 function initMath() { mathScore = 0; mathQ = 0; nextMath(); }
 function nextMath() {
   mathQ++;
   if (mathQ > mathTotal) {
-    const stars = mathScore >= 9 ? '🏆' : mathScore >= 7 ? '🎉' : '👍';
-    showResult(stars, '闯关结束！', `答对 ${mathScore} / ${mathTotal} 题，${mathScore>=7?'你真是算术小达人！':'多练习就会更厉害哦！'}`);
+    const stars = mathScore >= 18 ? '🏆' : mathScore >= 14 ? '🎉' : '👍';
+    showResult(stars, '闯关结束！', `答对 ${mathScore} / ${mathTotal} 题，${mathScore>=14?'你真是算术小达人！':'多练习就会更厉害哦！'}`);
     return;
   }
   document.getElementById('math-score').textContent = mathScore;
   document.getElementById('math-q').textContent = mathQ;
   const op = Math.random() > 0.5 ? '+' : '-';
   let a, b;
-  if (op === '+') { a = rand(1, 10); b = rand(1, 10); mathAnswer = a + b; }
-  else { a = rand(1, 10); b = rand(1, a); mathAnswer = a - b; }
+  if (op === '+') {
+    // 100以内加法
+    a = rand(1, 50); b = rand(1, 99 - a); mathAnswer = a + b;
+  } else {
+    // 100以内减法（结果非负）
+    a = rand(1, 99); b = rand(1, a); mathAnswer = a - b;
+  }
   document.getElementById('math-question').innerHTML = `<span class="num">${a}</span> <span class="op">${op}</span> <span class="num">${b}</span> <span class="op">=</span> ?`;
   const choices = new Set([mathAnswer]);
   while (choices.size < 4) {
-    const wrong = mathAnswer + rand(-4, 4);
-    if (wrong >= 0 && wrong !== mathAnswer) choices.add(wrong);
+    const wrong = mathAnswer + rand(-9, 9);
+    if (wrong >= 0 && wrong <= 100 && wrong !== mathAnswer) choices.add(wrong);
   }
   const arr = [...choices].sort(() => Math.random()-0.5);
   const box = document.getElementById('math-choices');
@@ -970,6 +1033,21 @@ function endMole() {
 // ============== Balloon Pop Game (打气球) ==============
 let balloonScore = 0, balloonTime = 30, balloonActive = false;
 let balloonTimer = null, balloonSpawnTimer = null, balloonCombo = 0;
+let balloonLevel = 1, balloonTarget = 20;
+
+// 关卡配置：目标分数 & 时间 & 难度参数
+function balloonLevelConfig(level) {
+  return {
+    target: 15 + level * 10,            // 1关:25, 2关:35, 3关:45...
+    time: Math.max(20, 30 - (level-1)*2), // 每关减2秒，最低20秒
+    bombRate: Math.min(0.3, 0.12 + (level-1)*0.03), // 炸弹概率递增
+    spawnMin: Math.max(150, 350 - (level-1)*30),    // 生成间隔递减
+    spawnMax: Math.max(350, 700 - (level-1)*50),
+    durationMin: Math.max(2000, 3500 - (level-1)*250), // 气球上升速度递增
+    durationMax: Math.max(3500, 6000 - (level-1)*400),
+  };
+}
+
 // 气球类型：emoji, 分数, 颜色
 const balloonTypes = [
   {emoji: '🎈', points: 1, color: '#ef4444'},
@@ -986,9 +1064,14 @@ const balloonBombs = [
 ];
 
 function initBalloon() {
-  balloonScore = 0; balloonTime = 30; balloonActive = true; balloonCombo = 0;
+  const cfg = balloonLevelConfig(balloonLevel);
+  balloonTarget = cfg.target;
+  balloonTime = cfg.time;
+  balloonScore = 0; balloonActive = true; balloonCombo = 0;
+  document.getElementById('balloon-level').textContent = balloonLevel;
   document.getElementById('balloon-score').textContent = 0;
-  document.getElementById('balloon-time').textContent = 30;
+  document.getElementById('balloon-target').textContent = balloonTarget;
+  document.getElementById('balloon-time').textContent = balloonTime;
   const area = document.getElementById('balloon-area');
   area.querySelectorAll('.balloon, .balloon-particle, .balloon-score-popup').forEach(el => el.remove());
   // 添加几朵云
@@ -1011,8 +1094,9 @@ function initBalloon() {
 
 function spawnBalloon() {
   if (!balloonActive) return;
+  const cfg = balloonLevelConfig(balloonLevel);
   const area = document.getElementById('balloon-area');
-  const isBomb = Math.random() < 0.15;
+  const isBomb = Math.random() < cfg.bombRate;
   const type = isBomb
     ? balloonBombs[Math.floor(Math.random()*balloonBombs.length)]
     : balloonTypes[Math.floor(Math.random()*balloonTypes.length)];
@@ -1028,7 +1112,7 @@ function spawnBalloon() {
   balloon.style.top = (area.offsetHeight + 20) + 'px';
   area.appendChild(balloon);
 
-  const duration = rand(3500, 6000);
+  const duration = rand(cfg.durationMin, cfg.durationMax);
   // 轻微左右摆动上升
   const sway = rand(-30, 30);
   const anim = balloon.animate(
@@ -1078,7 +1162,7 @@ function spawnBalloon() {
   // 飞出屏幕自动移除
   setTimeout(() => { if (balloon.parentNode) balloon.remove(); }, duration + 200);
 
-  const nextDelay = rand(300, 700);
+  const nextDelay = rand(cfg.spawnMin, cfg.spawnMax);
   balloonSpawnTimer = setTimeout(spawnBalloon, nextDelay);
 }
 
@@ -1127,8 +1211,13 @@ function stopBalloon() {
 }
 function endBalloon() {
   stopBalloon();
-  const stars = balloonScore >= 30 ? '🏆' : balloonScore >= 18 ? '🎉' : '🎈';
-  showResult(stars, '时间到！', `你获得了 ${balloonScore} 分，${balloonScore>=18?'真是气球高手！':'多练习就能百发百中！'}`);
+  const reached = balloonScore >= balloonTarget;
+  if (reached) {
+    showResult('🏆', `第 ${balloonLevel} 关通过！`, `你获得了 ${balloonScore} 分，达到目标 ${balloonTarget} 分！准备好挑战下一关了吗？`, true);
+  } else {
+    const stars = balloonScore >= balloonTarget * 0.6 ? '🎉' : '🎈';
+    showResult(stars, '时间到！', `你获得了 ${balloonScore} 分，目标 ${balloonTarget} 分，差一点点就过关了，再试一次吧！`);
+  }
 }
 
 function rand(a, b) { return Math.floor(Math.random()*(b-a+1))+a; }
