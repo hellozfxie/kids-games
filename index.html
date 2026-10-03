@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
+<html lang="zh-CN"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>小朋友的快乐乐园 🎉</title>
@@ -71,6 +70,8 @@
   .game-card:nth-child(3) { background: linear-gradient(135deg,#fef9e7,#fef3c7); border-color: #fbbf24; }
   .game-card:nth-child(4) { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border-color: #4ade80; }
   .game-card:nth-child(5) { background: linear-gradient(135deg,#faf5ff,#f3e8ff); border-color: #a78bfa; }
+  .game-card:nth-child(6) { background: linear-gradient(135deg,#ecfdf5,#d1fae5); border-color: #10b981; }
+  .game-card:nth-child(7) { background: linear-gradient(135deg,#eff6ff,#dbeafe); border-color: #6366f1; }
 
   /* ============ Game Screen ============ */
   .screen { display: none; animation: pop .35s ease; }
@@ -171,6 +172,36 @@
     text-shadow: 2px 2px 0 #fff; z-index: 30; opacity: 0; transition: opacity .3s;
   }
   .balloon-combo.show { opacity: 1; animation: pop .3s; }
+
+  /* ===== Snake Game ===== */
+  .snake-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .snake-canvas {
+    background: #1a1a2e; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    border: 4px solid #4a3f5c; max-width: 100%; touch-action: none;
+  }
+  .snake-controls { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .snake-row { display: flex; gap: 8px; }
+  .snake-btn {
+    width: 60px; height: 60px; font-size: 26px; border: none; border-radius: 16px;
+    background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.15); cursor: pointer;
+    transition: transform .1s; user-select: none;
+  }
+  .snake-btn:active { transform: scale(0.92); }
+
+  /* ===== Tetris Game ===== */
+  .tetris-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .tetris-canvas {
+    background: #0f0f23; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    border: 4px solid #4a3f5c; max-width: 100%; touch-action: none;
+  }
+  .tetris-controls { display: grid; grid-template-columns: repeat(3, 60px); gap: 8px; justify-content: center; }
+  .tetris-btn {
+    height: 60px; font-size: 22px; border: none; border-radius: 16px;
+    background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.15); cursor: pointer;
+    transition: transform .1s; user-select: none;
+  }
+  .tetris-btn.wide { grid-column: span 3; }
+  .tetris-btn:active { transform: scale(0.92); }
 
   /* ===== Math Game ===== */
   .math-box {
@@ -290,7 +321,7 @@
   </div>
 
   <!-- Lobby -->
-  <div id="lobby" class="lobby screen active">
+  <div id="lobby" class="lobby screen">
     <h1>小朋友的快乐乐园 🎉</h1>
     <p class="subtitle">选一个喜欢的游戏，开始玩耍吧！</p>
     <div class="game-grid">
@@ -318,6 +349,16 @@
         <span class="emoji">🎈</span>
         <div class="name">欢乐打气球</div>
         <div class="desc">彩色气球飞上天，点破它们得分！小心炸弹哦～</div>
+      </div>
+      <div class="game-card" onclick="startGame('snake')">
+        <span class="emoji">🐍</span>
+        <div class="name">贪吃蛇</div>
+        <div class="desc">控制小蛇吃食物，越长越厉害，别撞墙哦！</div>
+      </div>
+      <div class="game-card" onclick="startGame('tetris')">
+        <span class="emoji">🧱</span>
+        <div class="name">俄罗斯方块</div>
+        <div class="desc">方块落下来，拼满一行就能消除！</div>
       </div>
     </div>
   </div>
@@ -378,16 +419,52 @@
       <div id="balloon-combo" class="balloon-combo"></div>
     </div>
   </div>
+
+  <!-- Snake Game -->
+  <div id="game-snake" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">🐍 贪吃蛇</div>
+      <div class="stat">第 <span id="snake-level">1</span> 关 ｜ 得分: <span id="snake-score">0</span> ｜ 食物: <span id="snake-food">0</span>/<span id="snake-goal">6</span></div>
+    </div>
+    <div class="snake-wrap">
+      <canvas id="snake-canvas" class="snake-canvas" width="300" height="300"></canvas>
+      <div class="snake-controls">
+        <button class="snake-btn" ontouchstart="snakeDir('up')" onclick="snakeDir('up')">⬆️</button>
+        <div class="snake-row">
+          <button class="snake-btn" ontouchstart="snakeDir('left')" onclick="snakeDir('left')">⬅️</button>
+          <button class="snake-btn" ontouchstart="snakeDir('down')" onclick="snakeDir('down')">⬇️</button>
+          <button class="snake-btn" ontouchstart="snakeDir('right')" onclick="snakeDir('right')">➡️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tetris Game -->
+  <div id="game-tetris" class="screen active">
+    <div class="screen-header">
+      <div class="screen-title">🧱 俄罗斯方块</div>
+      <div class="stat">第 <span id="tetris-level">1</span> 关 ｜ 得分: <span id="tetris-score">14</span> ｜ 消行: <span id="tetris-lines">0</span>/<span id="tetris-goal">6</span></div>
+    </div>
+    <div class="tetris-wrap">
+      <canvas id="tetris-canvas" class="tetris-canvas" width="300" height="600"></canvas>
+      <div class="tetris-controls">
+        <button class="tetris-btn" ontouchstart="tetrisAction('left')" onclick="tetrisAction('left')">⬅️</button>
+        <button class="tetris-btn" ontouchstart="tetrisAction('rotate')" onclick="tetrisAction('rotate')">🔄</button>
+        <button class="tetris-btn" ontouchstart="tetrisAction('right')" onclick="tetrisAction('right')">➡️</button>
+        <button class="tetris-btn wide" ontouchstart="tetrisAction('down')" onclick="tetrisAction('down')">⬇️ 下落</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="toast" class="toast"></div>
 
 <!-- Result Modal -->
-<div id="modal" class="modal">
+<div id="modal" class="modal show">
   <div class="modal-content">
-    <span id="modal-emoji" class="modal-emoji">🎉</span>
-    <div id="modal-title" class="modal-title">太棒啦！</div>
-    <div id="modal-text" class="modal-text"></div>
+    <span id="modal-emoji" class="modal-emoji">🧱</span>
+    <div id="modal-title" class="modal-title">方块堆满啦！</div>
+    <div id="modal-text" class="modal-text">消除了 0 行，得到 14 分。再试一次一定能成功！</div>
     <div class="modal-btns">
       <button id="modal-next-btn" class="btn btn-primary" style="display:none;" onclick="nextLevel()">➡️ 下一关</button>
       <button class="btn btn-primary" onclick="restartGame()">🔄 再玩一次</button>
@@ -452,6 +529,8 @@ function showLobby() {
   document.getElementById('lobby').classList.add('active');
   stopMole();
   stopBalloon();
+  stopSnake();
+  stopTetris();
   closeModal();
   currentGame = null;
 }
@@ -465,6 +544,8 @@ function startGame(name) {
   if (name==='color') initColor();
   if (name==='mole') initMole();
   if (name==='balloon') initBalloon();
+  if (name==='snake') initSnake();
+  if (name==='tetris') initTetris();
 }
 function restartGame() {
   sndClick();
@@ -472,6 +553,8 @@ function restartGame() {
   // 重置关卡
   if (currentGame === 'match3') m3Level = 1;
   if (currentGame === 'balloon') balloonLevel = 1;
+  if (currentGame === 'snake') snakeLevel = 1;
+  if (currentGame === 'tetris') tetrisLevel = 1;
   if (currentGame) startGame(currentGame);
 }
 function nextLevel() {
@@ -479,6 +562,8 @@ function nextLevel() {
   closeModal();
   if (currentGame === 'match3') m3Level++;
   if (currentGame === 'balloon') balloonLevel++;
+  if (currentGame === 'snake') snakeLevel++;
+  if (currentGame === 'tetris') tetrisLevel++;
   if (currentGame) startGame(currentGame);
 }
 function showResult(emoji, title, text, hasNext=false) {
@@ -1222,8 +1307,477 @@ function endBalloon() {
 
 function rand(a, b) { return Math.floor(Math.random()*(b-a+1))+a; }
 
+// ============== Snake Game (贪吃蛇) ==============
+const snakeCols = 20, snakeRows = 20;
+let snakeLevel = 1, snakeScore = 0, snakeFood = 0, snakeGoal = 5;
+let snake = [], snakeDirX = 1, snakeDirY = 0, snakeNextDir = {x:1, y:0};
+let snakeFoodPos = null, snakeTimer = null, snakeActive = false;
+let snakeCanvasSize = 400, snakeCell = 20;
+
+function snakeLevelConfig(level) {
+  return {
+    goal: 4 + level * 2,                              // 1关:6, 2关:8, 3关:10...
+    speed: Math.max(70, 220 - (level - 1) * 18),      // 关卡越高，速度越快
+  };
+}
+
+function initSnake() {
+  const cfg = snakeLevelConfig(snakeLevel);
+  snakeGoal = cfg.goal;
+  snakeScore = 0; snakeFood = 0; snakeActive = true;
+  snakeDirX = 1; snakeDirY = 0; snakeNextDir = {x:1, y:0};
+  // 自适应 canvas 尺寸
+  const canvas = document.getElementById('snake-canvas');
+  const maxW = Math.min(400, window.innerWidth - 40);
+  snakeCanvasSize = Math.floor(maxW / snakeCols) * snakeCols;
+  snakeCell = snakeCanvasSize / snakeCols;
+  canvas.width = snakeCanvasSize;
+  canvas.height = snakeCanvasSize;
+  // 初始蛇（长度3，水平放置）
+  snake = [
+    {x: 8, y: 10},
+    {x: 7, y: 10},
+    {x: 6, y: 10},
+  ];
+  spawnSnakeFood();
+  document.getElementById('snake-level').textContent = snakeLevel;
+  document.getElementById('snake-score').textContent = 0;
+  document.getElementById('snake-food').textContent = 0;
+  document.getElementById('snake-goal').textContent = snakeGoal;
+  drawSnake();
+  clearTimeout(snakeTimer);
+  // 给小朋友 1.2 秒观察时间后再开始移动
+  snakeTimer = setTimeout(() => {
+    if (!snakeActive) return;
+    snakeTimer = setInterval(snakeStep, cfg.speed);
+  }, 1200);
+
+  // 触屏滑动控制
+  const sCanvas = document.getElementById('snake-canvas');
+  let sTouchX = 0, sTouchY = 0;
+  sCanvas.ontouchstart = (e) => {
+    sTouchX = e.touches[0].clientX;
+    sTouchY = e.touches[0].clientY;
+  };
+  sCanvas.ontouchend = (e) => {
+    const dx = e.changedTouches[0].clientX - sTouchX;
+    const dy = e.changedTouches[0].clientY - sTouchY;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      snakeDir(dx > 0 ? 'right' : 'left');
+    } else {
+      snakeDir(dy > 0 ? 'down' : 'up');
+    }
+  };
+}
+
+function spawnSnakeFood() {
+  const occupied = new Set(snake.map(s => s.x+','+s.y));
+  let pos;
+  do {
+    pos = { x: rand(0, snakeCols-1), y: rand(0, snakeRows-1) };
+  } while (occupied.has(pos.x+','+pos.y));
+  snakeFoodPos = pos;
+}
+
+function snakeDir(dir) {
+  if (!snakeActive) return;
+  // 防止 180 度反向
+  const map = {
+    up:    {x: 0,  y: -1},
+    down:  {x: 0,  y: 1},
+    left:  {x: -1, y: 0},
+    right: {x: 1,  y: 0},
+  };
+  const d = map[dir];
+  if (!d) return;
+  if (d.x === -snakeDirX && d.y === -snakeDirY) return;
+  snakeNextDir = d;
+}
+
+function snakeStep() {
+  if (!snakeActive) return;
+  snakeDirX = snakeNextDir.x;
+  snakeDirY = snakeNextDir.y;
+  const head = { x: snake[0].x + snakeDirX, y: snake[0].y + snakeDirY };
+
+  // 撞墙判定
+  if (head.x < 0 || head.x >= snakeCols || head.y < 0 || head.y >= snakeRows) {
+    endSnake(false);
+    return;
+  }
+  // 撞自己判定
+  if (snake.some(s => s.x === head.x && s.y === head.y)) {
+    endSnake(false);
+    return;
+  }
+
+  snake.unshift(head);
+
+  // 吃食物
+  if (head.x === snakeFoodPos.x && head.y === snakeFoodPos.y) {
+    snakeScore += 10;
+    snakeFood++;
+    document.getElementById('snake-score').textContent = snakeScore;
+    document.getElementById('snake-food').textContent = snakeFood;
+    sndCorrect();
+    if (snakeFood >= snakeGoal) {
+      endSnake(true);
+      return;
+    }
+    spawnSnakeFood();
+  } else {
+    snake.pop();
+  }
+  drawSnake();
+}
+
+function drawSnake() {
+  const canvas = document.getElementById('snake-canvas');
+  const ctx = canvas.getContext('2d');
+  const c = snakeCell;
+  // 背景网格
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, snakeCanvasSize, snakeCanvasSize);
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= snakeCols; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i*c, 0); ctx.lineTo(i*c, snakeCanvasSize); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, i*c); ctx.lineTo(snakeCanvasSize, i*c); ctx.stroke();
+  }
+  // 食物（苹果）
+  if (snakeFoodPos) {
+    const fx = snakeFoodPos.x*c, fy = snakeFoodPos.y*c;
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(fx + c/2, fy + c/2, c/2 - 2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(fx + c/2 - 1, fy + 2, 3, 5);
+  }
+  // 蛇身
+  snake.forEach((s, i) => {
+    const x = s.x*c, y = s.y*c;
+    if (i === 0) {
+      // 蛇头
+      ctx.fillStyle = '#22c55e';
+      roundRect(ctx, x+1, y+1, c-2, c-2, 5);
+      ctx.fill();
+      // 眼睛
+      ctx.fillStyle = '#fff';
+      const eyeSize = c*0.18;
+      let ex1, ey1, ex2, ey2;
+      if (snakeDirX === 1) { ex1 = x+c*0.6; ey1 = y+c*0.25; ex2 = x+c*0.6; ey2 = y+c*0.6; }
+      else if (snakeDirX === -1) { ex1 = x+c*0.2; ey1 = y+c*0.25; ex2 = x+c*0.2; ey2 = y+c*0.6; }
+      else if (snakeDirY === -1) { ex1 = x+c*0.25; ey1 = y+c*0.2; ex2 = x+c*0.6; ey2 = y+c*0.2; }
+      else { ex1 = x+c*0.25; ey1 = y+c*0.6; ex2 = x+c*0.6; ey2 = y+c*0.6; }
+      ctx.beginPath(); ctx.arc(ex1, ey1, eyeSize, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex2, ey2, eyeSize, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(ex1, ey1, eyeSize*0.5, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex2, ey2, eyeSize*0.5, 0, Math.PI*2); ctx.fill();
+    } else {
+      // 蛇身（渐变色）
+      const shade = Math.max(0.5, 1 - i*0.04);
+      ctx.fillStyle = `rgba(74, 222, 128, ${shade})`;
+      roundRect(ctx, x+1, y+1, c-2, c-2, 4);
+      ctx.fill();
+    }
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function stopSnake() {
+  snakeActive = false;
+  clearInterval(snakeTimer);
+}
+
+function endSnake(won) {
+  stopSnake();
+  if (won) {
+    showResult('🏆', `第 ${snakeLevel} 关通过！`, `小蛇吃到了 ${snakeFood} 个食物，得到 ${snakeScore} 分！准备好挑战下一关了吗？`, true);
+  } else {
+    showResult('🐍', '哎呀，撞到啦！', `你吃了 ${snakeFood} 个食物，得到 ${snakeScore} 分。再试一次一定能过关！`);
+  }
+}
+
+// ============== Tetris Game (俄罗斯方块) ==============
+const tetrisCols = 10, tetrisRows = 20;
+let tetrisLevel = 1, tetrisScore = 0, tetrisLines = 0, tetrisGoal = 5;
+let tetrisBoard = [], tetrisPiece = null, tetrisPieceX = 0, tetrisPieceY = 0;
+let tetrisTimer = null, tetrisActive = false;
+let tetrisCanvasW = 240, tetrisCanvasH = 480, tetrisCell = 24;
+
+// 7种方块形状（旋转矩阵）
+const tetrisShapes = {
+  I: { color: '#06b6d4', blocks: [[[1,1,1,1]], [[1],[1],[1],[1]]] },
+  O: { color: '#fbbf24', blocks: [[[1,1],[1,1]]] },
+  T: { color: '#a855f7', blocks: [[[0,1,0],[1,1,1]], [[1,0],[1,1],[1,0]], [[1,1,1],[0,1,0]], [[0,1],[1,1],[0,1]]] },
+  L: { color: '#f97316', blocks: [[[0,0,1],[1,1,1]], [[1,0],[1,0],[1,1]], [[1,1,1],[1,0,0]], [[1,1],[0,1],[0,1]]] },
+  J: { color: '#3b82f6', blocks: [[[1,0,0],[1,1,1]], [[1,1],[1,0],[1,0]], [[1,1,1],[0,0,1]], [[0,1],[0,1],[1,1]]] },
+  S: { color: '#22c55e', blocks: [[[0,1,1],[1,1,0]], [[1,0],[1,1],[0,1]]] },
+  Z: { color: '#ef4444', blocks: [[[1,1,0],[0,1,1]], [[0,1],[1,1],[1,0]]] },
+};
+const tetrisKeys = Object.keys(tetrisShapes);
+
+function tetrisLevelConfig(level) {
+  return {
+    goal: 4 + level * 2,                                // 1关:6, 2关:8, 3关:10...
+    speed: Math.max(120, 800 - (level - 1) * 65),       // 关卡越高，下落越快
+  };
+}
+
+function initTetris() {
+  const cfg = tetrisLevelConfig(tetrisLevel);
+  tetrisGoal = cfg.goal;
+  tetrisScore = 0; tetrisLines = 0; tetrisActive = true;
+  // 自适应 canvas 尺寸
+  const canvas = document.getElementById('tetris-canvas');
+  const maxW = Math.min(300, window.innerWidth - 40);
+  tetrisCell = Math.floor(maxW / tetrisCols);
+  tetrisCanvasW = tetrisCell * tetrisCols;
+  tetrisCanvasH = tetrisCell * tetrisRows;
+  canvas.width = tetrisCanvasW;
+  canvas.height = tetrisCanvasH;
+  // 初始化空棋盘
+  tetrisBoard = [];
+  for (let r = 0; r < tetrisRows; r++) {
+    tetrisBoard.push(new Array(tetrisCols).fill(null));
+  }
+  document.getElementById('tetris-level').textContent = tetrisLevel;
+  document.getElementById('tetris-score').textContent = 0;
+  document.getElementById('tetris-lines').textContent = 0;
+  document.getElementById('tetris-goal').textContent = tetrisGoal;
+  spawnTetrisPiece();
+  drawTetris();
+  clearInterval(tetrisTimer);
+  tetrisTimer = setInterval(tetrisStep, cfg.speed);
+}
+
+function spawnTetrisPiece() {
+  const key = tetrisKeys[Math.floor(Math.random()*tetrisKeys.length)];
+  const shape = tetrisShapes[key];
+  tetrisPiece = { key, rot: 0, blocks: shape.blocks[0], color: shape.color };
+  tetrisPieceX = Math.floor((tetrisCols - tetrisPiece.blocks[0].length) / 2);
+  tetrisPieceY = 0;
+  // 生成即碰撞 => 游戏结束
+  if (!tetrisCanPlace(tetrisPiece, tetrisPieceX, tetrisPieceY)) {
+    endTetris(false);
+  }
+}
+
+function tetrisCanPlace(piece, px, py) {
+  for (let r = 0; r < piece.blocks.length; r++) {
+    for (let c = 0; c < piece.blocks[r].length; c++) {
+      if (!piece.blocks[r][c]) continue;
+      const x = px + c, y = py + r;
+      if (x < 0 || x >= tetrisCols || y >= tetrisRows) return false;
+      if (y >= 0 && tetrisBoard[y][x]) return false;
+    }
+  }
+  return true;
+}
+
+function tetrisAction(action) {
+  if (!tetrisActive || !tetrisPiece) return;
+  if (action === 'left') {
+    if (tetrisCanPlace(tetrisPiece, tetrisPieceX - 1, tetrisPieceY)) {
+      tetrisPieceX--;
+      sndClick();
+    }
+  } else if (action === 'right') {
+    if (tetrisCanPlace(tetrisPiece, tetrisPieceX + 1, tetrisPieceY)) {
+      tetrisPieceX++;
+      sndClick();
+    }
+  } else if (action === 'rotate') {
+    const shape = tetrisShapes[tetrisPiece.key];
+    const nextRot = (tetrisPiece.rot + 1) % shape.blocks.length;
+    const rotated = { ...tetrisPiece, rot: nextRot, blocks: shape.blocks[nextRot] };
+    // 简单墙踢：尝试左右偏移
+    const kicks = [0, -1, 1, -2, 2];
+    for (const k of kicks) {
+      if (tetrisCanPlace(rotated, tetrisPieceX + k, tetrisPieceY)) {
+        tetrisPiece = rotated;
+        tetrisPieceX += k;
+        sndClick();
+        break;
+      }
+    }
+  } else if (action === 'down') {
+    if (tetrisCanPlace(tetrisPiece, tetrisPieceX, tetrisPieceY + 1)) {
+      tetrisPieceY++;
+      tetrisScore += 1;
+      document.getElementById('tetris-score').textContent = tetrisScore;
+    } else {
+      tetrisLock();
+      return;
+    }
+  }
+  drawTetris();
+}
+
+function tetrisStep() {
+  if (!tetrisActive) return;
+  if (tetrisCanPlace(tetrisPiece, tetrisPieceX, tetrisPieceY + 1)) {
+    tetrisPieceY++;
+  } else {
+    tetrisLock();
+    return;
+  }
+  drawTetris();
+}
+
+function tetrisLock() {
+  // 固定方块到棋盘
+  for (let r = 0; r < tetrisPiece.blocks.length; r++) {
+    for (let c = 0; c < tetrisPiece.blocks[r].length; c++) {
+      if (!tetrisPiece.blocks[r][c]) continue;
+      const x = tetrisPieceX + c, y = tetrisPieceY + r;
+      if (y >= 0) tetrisBoard[y][x] = tetrisPiece.color;
+    }
+  }
+  sndPop();
+  // 消除满行
+  let cleared = 0;
+  for (let r = tetrisRows - 1; r >= 0; r--) {
+    if (tetrisBoard[r].every(cell => cell !== null)) {
+      tetrisBoard.splice(r, 1);
+      tetrisBoard.unshift(new Array(tetrisCols).fill(null));
+      cleared++;
+      r++; // 重新检查同一行
+    }
+  }
+  if (cleared > 0) {
+    const points = [0, 100, 300, 500, 800][cleared];
+    tetrisScore += points;
+    tetrisLines += cleared;
+    document.getElementById('tetris-score').textContent = tetrisScore;
+    document.getElementById('tetris-lines').textContent = tetrisLines;
+    sndCorrect();
+    if (cleared >= 2) showToast(`${cleared} 行连消！太棒了！`);
+    if (tetrisLines >= tetrisGoal) {
+      drawTetris();
+      endTetris(true);
+      return;
+    }
+  }
+  drawTetris();
+  spawnTetrisPiece();
+  drawTetris();
+}
+
+function drawTetris() {
+  const canvas = document.getElementById('tetris-canvas');
+  const ctx = canvas.getContext('2d');
+  const c = tetrisCell;
+  // 背景
+  ctx.fillStyle = '#0f0f23';
+  ctx.fillRect(0, 0, tetrisCanvasW, tetrisCanvasH);
+  // 网格线
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= tetrisCols; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i*c, 0); ctx.lineTo(i*c, tetrisCanvasH); ctx.stroke();
+  }
+  for (let i = 0; i <= tetrisRows; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, i*c); ctx.lineTo(tetrisCanvasW, i*c); ctx.stroke();
+  }
+  // 已固定方块
+  for (let r = 0; r < tetrisRows; r++) {
+    for (let col = 0; col < tetrisCols; col++) {
+      if (tetrisBoard[r][col]) {
+        drawTetrisCell(ctx, col*c, r*c, c, tetrisBoard[r][col]);
+      }
+    }
+  }
+  // 当前方块（含落地预览阴影）
+  if (tetrisPiece) {
+    // 计算落地位置
+    let shadowY = tetrisPieceY;
+    while (tetrisCanPlace(tetrisPiece, tetrisPieceX, shadowY + 1)) shadowY++;
+    // 阴影
+    for (let r = 0; r < tetrisPiece.blocks.length; r++) {
+      for (let col = 0; col < tetrisPiece.blocks[r].length; col++) {
+        if (!tetrisPiece.blocks[r][col]) continue;
+        const x = (tetrisPieceX + col)*c, y = (shadowY + r)*c;
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        roundRect(ctx, x+1, y+1, c-2, c-2, 4);
+        ctx.fill();
+      }
+    }
+    // 实际方块
+    for (let r = 0; r < tetrisPiece.blocks.length; r++) {
+      for (let col = 0; col < tetrisPiece.blocks[r].length; col++) {
+        if (!tetrisPiece.blocks[r][col]) continue;
+        const x = (tetrisPieceX + col)*c, y = (tetrisPieceY + r)*c;
+        drawTetrisCell(ctx, x, y, c, tetrisPiece.color);
+      }
+    }
+  }
+}
+
+function drawTetrisCell(ctx, x, y, size, color) {
+  ctx.fillStyle = color;
+  roundRect(ctx, x+1, y+1, size-2, size-2, 4);
+  ctx.fill();
+  // 高光
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  roundRect(ctx, x+3, y+3, size-6, (size-6)*0.35, 2);
+  ctx.fill();
+}
+
+function stopTetris() {
+  tetrisActive = false;
+  clearInterval(tetrisTimer);
+}
+
+function endTetris(won) {
+  stopTetris();
+  if (won) {
+    showResult('🧱', `第 ${tetrisLevel} 关通过！`, `消除了 ${tetrisLines} 行，得到 ${tetrisScore} 分！准备好挑战下一关了吗？`, true);
+  } else {
+    showResult('🧱', '方块堆满啦！', `消除了 ${tetrisLines} 行，得到 ${tetrisScore} 分。再试一次一定能成功！`);
+  }
+}
+
+// ============== 键盘控制（贪吃蛇 & 俄罗斯方块）==============
+document.addEventListener('keydown', (e) => {
+  if (currentGame === 'snake') {
+    const map = {
+      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      w: 'up', s: 'down', a: 'left', d: 'right',
+      W: 'up', S: 'down', A: 'left', D: 'right',
+    };
+    if (map[e.key]) { e.preventDefault(); snakeDir(map[e.key]); }
+  } else if (currentGame === 'tetris') {
+    const map = {
+      ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'rotate',
+      ArrowDown: 'down',
+      a: 'left', d: 'right', w: 'rotate', s: 'down',
+      A: 'left', D: 'right', W: 'rotate', S: 'down',
+    };
+    if (map[e.key]) { e.preventDefault(); tetrisAction(map[e.key]); }
+  }
+});
+
 // 首次点击激活音频
 document.addEventListener('click', () => { try { audioCtx?.resume(); } catch(e){} }, { once: false });
 </script>
-</body>
-</html>
+
+
+</body></html>
+<!-- deploy trigger 1790995035 -->
